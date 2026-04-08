@@ -12,7 +12,7 @@
       --line: rgba(255,255,255,0.08);
       --text: #f5f7fb;
       --muted: #b7c2d4;
-      --accent: #1fb6ff;
+      --accent: #1fb6ff;  
       --accent-2: #7c4dff;
       --good: #34d399;
       --warn: #f59e0b;
@@ -391,7 +391,7 @@
 
   <script>
     const CONFIG = {
-      apiKey: 'COLLE_TON_API_KEY_ICI',
+      apiKey: '123456789abcdef123456789abcdef',
       competitionCode: 'CL',
       refreshMs: 5 * 60 * 1000,
       pastDays: 7,
