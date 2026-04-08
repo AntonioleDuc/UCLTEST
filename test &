@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ligue des champions - TV Dashboard</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: #0f1e33;
+      --panel-2: #122741;
+      --line: rgba(255,255,255,0.08);
+      --text: #f5f7fb;
+      --muted: #b7c2d4;
+      --accent: #1fb6ff;
+      --accent-2: #7c4dff;
+      --good: #34d399;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --shadow: 0 18px 50px rgba(0,0,0,0.28);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(31,182,255,0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(124,77,255,0.18), transparent 24%),
+        linear-gradient(160deg, #06101c 0%, #091728 55%, #0b1b30 100%);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .screen {
+      width: 100vw;
+      height: 100vh;
+      padding: 26px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 18px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 22px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: rgba(10, 22, 37, 0.78);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+    }
+
+    .title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .badge {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 28px;
+      background: linear-gradient(145deg, var(--accent), var(--accent-2));
+      box-shadow: 0 8px 24px rgba(31,182,255,0.28);
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 34px;
+      letter-spacing: 0.3px;
+    }
+
+    .title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .status {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 14px;
+      text-align: right;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--good);
+      box-shadow: 0 0 0 8px rgba(52,211,153,0.12);
+      flex: 0 0 auto;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 18px;
+      min-height: 0;
+    }
+
+    .panel {
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(16,31,53,0.9), rgba(12,25,43,0.95));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 23px;
+    }
+
+    .panel-header span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .panel-body {
+      min-height: 0;
+      padding: 14px;
+      overflow: auto;
+      scrollbar-width: none;
+    }
+
+    .panel-body::-webkit-scrollbar { display: none; }
+
+    .match-card {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.015));
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .team {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .team.away { justify-content: flex-end; }
+
+    .crest {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
+      background: rgba(255,255,255,0.96);
+      border-radius: 50%;
+      padding: 4px;
+      flex: 0 0 auto;
+    }
+
+    .team-name {
+      font-size: 20px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .meta {
+      text-align: center;
+      min-width: 150px;
+    }
+
+    .score {
+      font-size: 34px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 1px;
+    }
+
+    .match-status {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+    }
+
+    .tag.live { background: rgba(239,68,68,0.18); color: #fecaca; }
+    .tag.finished { background: rgba(52,211,153,0.18); color: #bbf7d0; }
+    .tag.scheduled { background: rgba(245,158,11,0.18); color: #fde68a; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 16px;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 12px 10px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      background: #10223a;
+    }
+
+    tbody td {
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      vertical-align: middle;
+    }
+
+    tbody tr:nth-child(odd) {
+      background: rgba(255,255,255,0.015);
+    }
+
+    tbody tr:nth-child(-n+8) {
+      box-shadow: inset 4px 0 0 rgba(52,211,153,0.75);
+    }
+
+    .pos {
+      width: 44px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .team-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .team-cell img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      background: rgba(255,255,255,0.95);
+      border-radius: 50%;
+      padding: 3px;
+      flex: 0 0 auto;
+    }
+
+    .team-cell span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 600;
+    }
+
+    .align-center { text-align: center; }
+    .strong { font-weight: 800; }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 18px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(8,18,31,0.72);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .ticker {
+      overflow: hidden;
+      white-space: nowrap;
+      flex: 1;
+      margin-left: 18px;
+      position: relative;
+    }
+
+    .ticker span {
+      display: inline-block;
+      padding-left: 100%;
+      animation: ticker 26s linear infinite;
+    }
+
+    @keyframes ticker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    .empty-state {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+      padding: 30px;
+      font-size: 18px;
+    }
+
+    .error {
+      color: #fecaca;
+    }
+
+    @media (max-width: 1280px) {
+      .content { grid-template-columns: 1fr; }
+      .team-name { font-size: 18px; }
+      .score { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="screen">
+    <header class="header">
+      <div class="title-wrap">
+        <div class="badge">⚽</div>
+        <div class="title">
+          <h1>Ligue des champions</h1>
+          <p>Résultats automatiques + classement pour affichage TV</p>
+        </div>
+      </div>
+      <div class="status">
+        <div class="dot"></div>
+        <div>
+          <div id="lastUpdate">Chargement…</div>
+          <div id="phaseInfo">Connexion aux données</div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Derniers résultats</h2>
+          <span id="matchesRange">7 derniers jours</span>
+        </div>
+        <div class="panel-body" id="matchesContainer">
+          <div class="empty-state">Chargement des matchs…</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Classement</h2>
+          <span id="tableInfo">Phase en cours</span>
+        </div>
+        <div class="panel-body" id="standingsContainer">
+          <div class="empty-state">Chargement du classement…</div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div>Source API : football-data.org</div>
+      <div class="ticker"><span id="tickerText">Initialisation du bandeau…</span></div>
+    </footer>
+  </div>
+
+  <script>
+    const CONFIG = {
+      apiKey: 'COLLE_TON_API_KEY_ICI',
+      competitionCode: 'CL',
+      refreshMs: 5 * 60 * 1000,
+      pastDays: 7,
+      upcomingDays: 3,
+      maxMatchesDisplayed: 8,
+      timezone: 'Europe/Paris',
+      locale: 'fr-FR'
+    };
+
+    const els = {
+      lastUpdate: document.getElementById('lastUpdate'),
+      phaseInfo: document.getElementById('phaseInfo'),
+      matchesRange: document.getElementById('matchesRange'),
+      matchesContainer: document.getElementById('matchesContainer'),
+      tableInfo: document.getElementById('tableInfo'),
+      standingsContainer: document.getElementById('standingsContainer'),
+      tickerText: document.getElementById('tickerText')
+    };
+
+    function formatDate(date) {
+      return date.toISOString().slice(0, 10);
+    }
+
+    function formatHour(utcDate) {
+      return new Intl.DateTimeFormat(CONFIG.locale, {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: CONFIG.timezone
+      }).format(new Date(utcDate));
+    }
+
+    function formatFullDate(utcDate) {
+      return new Intl.DateTimeFormat(CONFIG.locale, {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: CONFIG.timezone
+      }).format(new Date(utcDate));
+    }
+
+    function safeText(value, fallback = '—') {
+      return value ?? fallback;
+    }
+
+    function getStatusLabel(status) {
+      switch (status) {
+        case 'FINISHED':
+          return { label: 'Terminé', cls: 'finished' };
+        case 'IN_PLAY':
+        case 'PAUSED':
+        case 'LIVE':
+          return { label: 'Live', cls: 'live' };
+        case 'TIMED':
+        case 'SCHEDULED':
+          return { label: 'À venir', cls: 'scheduled' };
+        default:
+          return { label: status || 'Info', cls: '' };
+      }
+    }
+
+    async function apiFetch(path) {
+      const headers = {};
+      if (CONFIG.apiKey && CONFIG.apiKey !== 'COLLE_TON_API_KEY_ICI') {
+        headers['X-Auth-Token'] = CONFIG.apiKey;
+      }
+
+      const response = await fetch(`https://api.football-data.org/v4${path}`, { headers });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status} - ${text}`);
+      }
+      return response.json();
+    }
+
+    function renderMatches(matches) {
+      if (!matches.length) {
+        els.matchesContainer.innerHTML = '<div class="empty-state">Aucun match à afficher sur la période choisie.</div>';
+        return;
+      }
+
+      const html = matches.map(match => {
+        const home = match.homeTeam || {};
+        const away = match.awayTeam || {};
+        const scoreHome = match.score?.fullTime?.home ?? '-';
+        const scoreAway = match.score?.fullTime?.away ?? '-';
+        const status = getStatusLabel(match.status);
+        const statusText = match.status === 'FINISHED'
+          ? formatFullDate(match.utcDate)
+          : `${formatFullDate(match.utcDate)} • ${status.label}`;
+
+        return `
+          <article class="match-card">
+            <div class="team">
+              ${home.crest ? `<img class="crest" src="${home.crest}" alt="${safeText(home.shortName, home.name)}">` : ''}
+              <div class="team-name">${safeText(home.shortName, home.name)}</div>
+            </div>
+            <div class="meta">
+              <div class="score">${scoreHome} - ${scoreAway}</div>
+              <div class="match-status"><span class="tag ${status.cls}">${status.label}</span></div>
+              <div class="match-status">${statusText}</div>
+            </div>
+            <div class="team away">
+              <div class="team-name">${safeText(away.shortName, away.name)}</div>
+              ${away.crest ? `<img class="crest" src="${away.crest}" alt="${safeText(away.shortName, away.name)}">` : ''}
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      els.matchesContainer.innerHTML = html;
+    }
+
+    function renderStandings(table, stageLabel) {
+      if (!table || !table.length) {
+        els.standingsContainer.innerHTML = '<div class="empty-state">Classement indisponible pour cette phase de la compétition.</div>';
+        return;
+      }
+
+      const rows = table.map(row => `
+        <tr>
+          <td class="pos">${row.position}</td>
+          <td>
+            <div class="team-cell">
+              ${row.team?.crest ? `<img src="${row.team.crest}" alt="${safeText(row.team.shortName, row.team.name)}">` : ''}
+              <span>${safeText(row.team.shortName, row.team.name)}</span>
+            </div>
+          </td>
+          <td class="align-center">${row.playedGames}</td>
+          <td class="align-center strong">${row.points}</td>
+          <td class="align-center">${row.goalDifference}</td>
+          <td class="align-center">${row.goalsFor}</td>
+        </tr>
+      `).join('');
+
+      els.tableInfo.textContent = stageLabel || 'Classement actuel';
+      els.standingsContainer.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 48px;">#</th>
+              <th>Équipe</th>
+              <th class="align-center" style="width: 52px;">J</th>
+              <th class="align-center" style="width: 58px;">Pts</th>
+              <th class="align-center" style="width: 58px;">Diff</th>
+              <th class="align-center" style="width: 52px;">BP</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function renderTicker(matches, table) {
+      const results = matches.slice(0, 5).map(match => {
+        const home = safeText(match.homeTeam?.shortName, match.homeTeam?.name);
+        const away = safeText(match.awayTeam?.shortName, match.awayTeam?.name);
+        const homeScore = match.score?.fullTime?.home ?? '-';
+        const awayScore = match.score?.fullTime?.away ?? '-';
+        if (match.status === 'FINISHED') {
+          return `${home} ${homeScore}-${awayScore} ${away}`;
+        }
+        return `${home} vs ${away} • ${formatHour(match.utcDate)}`;
+      });
+
+      const leaders = (table || []).slice(0, 4).map(row => `${row.position}. ${safeText(row.team?.shortName, row.team?.name)} (${row.points} pts)`);
+      const parts = [];
+      if (results.length) parts.push(`Résultats : ${results.join(' | ')}`);
+      if (leaders.length) parts.push(`Top 4 : ${leaders.join(' | ')}`);
+      els.tickerText.textContent = parts.join('   •   ') || 'Aucune donnée disponible';
+    }
+
+    async function loadDashboard() {
+      try {
+        const now = new Date();
+        const from = new Date(now);
+        from.setDate(now.getDate() - CONFIG.pastDays);
+        const to = new Date(now);
+        to.setDate(now.getDate() + CONFIG.upcomingDays);
+
+        els.matchesRange.textContent = `${CONFIG.pastDays} jours passés + ${CONFIG.upcomingDays} jours à venir`;
+        els.phaseInfo.textContent = 'Mise à jour en cours…';
+
+        const [matchesData, standingsData] = await Promise.all([
+          apiFetch(`/competitions/${CONFIG.competitionCode}/matches?dateFrom=${formatDate(from)}&dateTo=${formatDate(to)}`),
+          apiFetch(`/competitions/${CONFIG.competitionCode}/standings`)
+        ]);
+
+        const matchList = (matchesData.matches || [])
+          .filter(m => ['FINISHED', 'TIMED', 'SCHEDULED', 'IN_PLAY', 'PAUSED', 'LIVE'].includes(m.status))
+          .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+
+        const finished = matchList.filter(m => m.status === 'FINISHED').slice(-CONFIG.maxMatchesDisplayed);
+        const liveOrUpcoming = matchList.filter(m => m.status !== 'FINISHED').slice(0, Math.max(0, CONFIG.maxMatchesDisplayed - finished.length));
+        const finalMatches = [...finished, ...liveOrUpcoming];
+
+        const preferredTable = (standingsData.standings || []).find(s => s.type === 'TOTAL') || standingsData.standings?.[0];
+        const stageLabel = preferredTable?.stage ? `Phase : ${preferredTable.stage}` : 'Classement actuel';
+
+        renderMatches(finalMatches);
+        renderStandings(preferredTable?.table || [], stageLabel);
+        renderTicker(finalMatches, preferredTable?.table || []);
+
+        const competitionName = standingsData.competition?.name || 'UEFA Champions League';
+        const seasonStart = standingsData.season?.startDate ? new Date(standingsData.season.startDate).getFullYear() : '';
+        const seasonEnd = standingsData.season?.endDate ? new Date(standingsData.season.endDate).getFullYear() : '';
+        els.phaseInfo.textContent = `${competitionName}${seasonStart && seasonEnd ? ` • Saison ${seasonStart}-${seasonEnd}` : ''}`;
+        els.lastUpdate.textContent = `Actualisé le ${new Intl.DateTimeFormat(CONFIG.locale, {
+          day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: CONFIG.timezone
+        }).format(new Date())}`;
+      } catch (error) {
+        console.error(error);
+        els.matchesContainer.innerHTML = `<div class="empty-state error">Impossible de charger les matchs.<br>${error.message}</div>`;
+        els.standingsContainer.innerHTML = `<div class="empty-state error">Impossible de charger le classement.<br>Vérifie la clé API et les droits d'accès.</div>`;
+        els.tickerText.textContent = 'Erreur de chargement des données';
+        els.phaseInfo.textContent = 'Erreur API';
+        els.lastUpdate.textContent = 'Dernière tentative échouée';
+      }
+    }
+
+    loadDashboard();
+    setInterval(loadDashboard, CONFIG.refreshMs);
+  </script>
+</body>
+</html>
